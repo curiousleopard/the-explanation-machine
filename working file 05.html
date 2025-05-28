@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Explanation Machine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/geodata/worldLow.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+    <style>
+        .rating-dots {
+            display: inline-flex;
+            gap: 2px;
+        }
+        .rating-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .issue-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 4px;
+            border-radius: 2px;
+        }
+        .map-container {
+            width: 100%;
+            height: 400px;
+            background-color: #1e3a8a;
+            border-radius: 8px;
+        }
+        .material-card {
+            transition: all 0.3s ease;
+        }
+        .material-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        #mapdiv {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="bg-blue-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold mb-2">The Explanation Machine</h1>
+            <h2 class="text-2xl text-blue-200">The unseen story behind everyday products</h2>
+            <h3 class="text-lg text-blue-300 italic">A project by Maxwell Coates</h3>
+        </header>
+
+        <!-- Introduction -->
+        <section class="bg-blue-800 p-6 rounded-lg mb-8">
+            <h3 class="text-xl font-semibold mb-4">Understanding the Lightbulb</h3>
+            <p class="mb-4">
+                Every product we use contains hidden stories about its origins, environmental impact, and ethical considerations. 
+                This interactive tool reveals the complex supply chain behind a simple lightbulb. By selecting components below, 
+                you'll discover where materials come from, their environmental footprint, and ethical implications.
+            </p>
+            <p>
+                Modern lightbulbs contain materials sourced from around the globe, from mining practices to manufacturing processes, every component tells a story about our globalized economy and 
+                its consequences. Explore below to understand the true cost of illumination.
+            </p>
+        </section>
+
+        <div class="flex flex-col gap-8">
+            <!-- Title Section -->
+            <div class="w-full text-center">
+                <h3 class="text-2xl font-bold mb-6">COMPONENTS</h3>
+            </div>
+            
+            <!-- Component Buttons -->
+            <div class="w-full bg-blue-800 p-6 rounded-lg">
+                <div class="space-y-3">
+                    <button onclick="selectComponent('semiconductor')" class="w-full bg-blue-700 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-left transition">
+                        Semiconductor
+                    </button>
+                    <button onclick="selectComponent('lens')" class="w-full bg-blue-700 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-left transition">
+                        Lens
+                    </button>
+                    <button onclick="selectComponent('circuitboard')" class="w-full bg-blue-700 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-left transition">
+                        Circuit Board
+                    </button>
+                    <button onclick="selectComponent('heatsink')" class="w-full bg-blue-700 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-left transition">
+                        Heat Sink
+                    </button>
+                    <button onclick="selectComponent('base')" class="w-full bg-blue-700 hover:bg-blue-600 text-white py-3 px-4 rounded-lg text-left transition">
+                        Base
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Default View -->
+            <div id="default-view" class="w-full bg-white text-gray-800 p-8 rounded-lg text-center">
+                <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                <h3 class="text-xl font-semibold mb-2">Select a component to reveal its origin</h3>
+                <p class="text-gray-600">Click on any component in the list to explore where its materials come from and their environmental and ethical impact.</p>
+            </div>
+            
+            <!-- Dynamic content (hidden by default) -->
+            <div id="component-details" class="w-full hidden">
+                <!-- Description Section -->
+                <div id="component-description" class="w-full bg-white text-gray-800 p-6 rounded-lg mb-6 hidden">
+                    <h3 class="text-xl font-semibold mb-4">Component Overview</h3>
+                    <p id="description-text"></p>
+                </div>
+
+                <!-- Map Section -->
+                <div class="w-full bg-white text-gray-800 p-6 rounded-lg mb-6">
+                    <h3 class="text-xl font-semibold mb-4">Material Origins</h3>
+                    <div class="map-container">
+                        <div id="mapdiv"></div>
+                    </div>
+                </div>
+                
+                <!-- Materials List -->
+                <div class="w-full bg-white text-gray-800 p-6 rounded-lg mb-6">
+                    <h3 class="text-xl font-semibold mb-4">Materials used in production</h3>
+                    <div id="materials-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Material cards will be inserted here -->
+                    </div>
+                </div>
+                
+
+                
+                <!-- Summary Section -->
+                <div class="w-full bg-white text-gray-800 p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-4">Component Summary</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-medium text-blue-800 mb-2">Average Ratings</h4>
+                            <div id="average-ratings">
+                                <!-- Will be filled dynamically -->
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-medium text-blue-800 mb-2">Average Distance</h4>
+                            <p id="average-distance" class="text-2xl font-bold text-blue-900"></p>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-medium text-blue-800 mb-2">Average CO₂ Emissions</h4>
+                            <p id="average-co2" class="text-2xl font-bold text-blue-900"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data structure for all components and materials
+        const componentData = {
+            semiconductor: {
+                materials: ['arsenic', 'bauxite', 'copper', 'gallium']
+            },
+            lens: {
+                materials: ['dolemite', 'lime', 'limestone', 'quartzite', 'silica', 'soda', 'sodium']
+            },
+            circuitboard: {
+                materials: ['acetone', 'colemanite', 'copper', 'cumene', 'dolemite', 'epichlorohydrin', 'fluorspar', 'kaolin_clay', 'limestone', 'propylene', 'quartzite', 'silica']
+            },
+            heatsink: {
+                materials: ['aluminum', 'bauxite', 'iron', 'magnesium', 'manganese', 'quartzite', 'silicon', 'zinc']
+            },
+            base: {
+                materials: ['aluminum', 'bauxite', 'copper', 'iron', 'magnesium', 'manganese', 'zinc']
+            }
+        };
+
+        const descriptions = {
+            semiconductor: "Semiconductors regulate electrical current and are essential to all electronic devices. This lightbulb uses a semiconductor made from Gallium Arsenide, a compound known for its efficiency in high-speed and optoelectronic applications.",
+            lens: "The lens is crafted from soda-lime glass, the most common form of glass. Its production is energy-intensive, requiring the raw materials to be heated in a furnace at around 1675°C.",
+            circuitboard: "Circuit boards link all electronic components and are constructed from layered fiberglass, copper, and epoxy resin. Their manufacture involves substantial use of water and chemicals, raising concerns about environmental impact and waste management.",
+            heatsink: "The heat sink draws heat away from internal components to prevent overheating. Made from an aluminum alloy containing metals sourced globally, its production incurs high transportation and environmental costs.",
+            base: "The base provides the electrical connection to a power source. It's made from a metal alloy, and its production—especially the mining of raw materials—can significantly disrupt local ecosystems.",
+        };
+
+  const materialDetails = {
+    acetone: {
+        name: "Acetone",
+        origin: "Saudi Arabia",
+        originCoords: [45.0792, 23.8859],
+        distance: 7193.057,
+        co2: 1.5,
+        waterUsage: 4,
+        toxicity: 4,
+        recyclability: 4,
+        lifespan: 1,
+        sustainable: 3.25,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+           
+        }
+    },
+    aluminum: {
+        name: "Aluminum",
+        origin: "Xinjiang",
+        originCoords: [85.2947, 41.7489],
+        distance: 3461.584,
+        co2: 14,
+        waterUsage: 2,
+        toxicity: 3,
+        recyclability: 5,
+        lifespan: 5,
+        sustainable: 3.75,
+        issues: {
+            Alabor: true,
+            Blabor: true,
+            deforestation: true,
+           
+        }
+    },
+    arsenic: {
+        name: "Arsenic",
+        origin: "Russia",
+        originCoords: [105.3188, 61.5240],
+        distance: 6400,
+        co2: 2,
+        waterUsage: 1,
+        toxicity: 1,
+        recyclability: 1,
+        lifespan: 5,
+        sustainable: 2,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: true,
+           
+        }
+    },
+    bauxite: {
+        name: "Bauxite",
+        origin: "West Africa",
+        originCoords: [-2.8456, 7.9626],
+        distance: 5200,
+        co2: 4,
+        waterUsage: 1,
+        toxicity: 2,
+        recyclability: 1,
+        lifespan: 5,
+        sustainable: 2.25,
+        issues: {
+            Alabor: true,
+            Blabor: true,
+            deforestation: true,
+
+        }
+    },
+    colemanite: {
+        name: "Colemanite",
+        origin: "Turkey",
+        originCoords: [35.2433, 38.9637],
+        distance: 7400,
+        co2: 0.3,
+        waterUsage: 2,
+        toxicity: 3,
+        recyclability: 1,
+        lifespan: 5,
+        sustainable: 2.6,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    copper: {
+        name: "Copper",
+        origin: "Brazil",
+        originCoords: [-51.9253, -14.2350],
+        distance: 18096,
+        co2: 3,
+        waterUsage: 1,
+        toxicity: 2,
+        recyclability: 5,
+        lifespan: 5,
+        sustainable: 3.25,
+        issues: {
+            Alabor: true,
+            Blabor: true,
+            deforestation: true,
+        }
+    },
+    cumene: {
+        name: "Cumene",
+        origin: "Russia",
+        originCoords: [105.3188, 61.5240],
+        distance: 6400,
+        co2: 1.5,
+        waterUsage: 2,
+        toxicity: 2,
+        recyclability: 3,
+        lifespan: 2,
+        sustainable: 2.25,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    dolemite: {
+        name: "Dolemite",
+        origin: "Brazil",
+        originCoords: [-51.9253, -14.2350],
+        distance: 18096,
+        co2: 0.4,
+        waterUsage: 4,
+        toxicity: 4,
+        recyclability: 1,
+        lifespan: 5,
+        sustainable: 3.5,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    epichlorohydrin: {
+        name: "Epichlorohydrin",
+        origin: "China",
+        originCoords: [116.4074, 39.9042], // Changed from Zhongshan to Beijing
+        distance: 1960,
+        co2: 2.7,
+        waterUsage: 2,
+        toxicity: 1,
+        recyclability: 2,
+        lifespan: 2,
+        sustainable: 1.75,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    fluorspar: {
+        name: "Fluorspar",
+        origin: "Xinjiang",
+        originCoords: [85.2947, 41.7489],
+        distance: 3461.584,
+        co2: 0.5,
+        waterUsage: 2,
+        toxicity: 2,
+        recyclability: 1,
+        lifespan: 5,
+        sustainable: 2.5,
+        issues: {
+            Alabor: true,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    gallium: {
+        name: "Gallium",
+        origin: "China",
+        originCoords: [121.4737, 31.2304], // Changed to Shanghai
+        distance: 1250,
+        co2: 0.5,
+        waterUsage: 1,
+        toxicity: 3,
+        recyclability: 4,
+        lifespan: 4,
+        sustainable: 3,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: true,
+        }
+    },
+    iron: {
+        name: "Iron",
+        origin: "West Africa",
+        originCoords: [-2.8456, 7.9626],
+        distance: 11000,
+        co2: 2.5,
+        waterUsage: 2,
+        toxicity: 3,
+        recyclability: 5,
+        lifespan: 4,
+        sustainable: 3.5,
+        issues: {
+            Alabor: true,
+            Blabor: true,
+            deforestation: true,
+        }
+    },
+    kaolin_clay: {
+        name: "Kaolin Clay",
+        origin: "Turkey",
+        originCoords: [35.2433, 38.9637],
+        distance: 7400,
+        co2: 0.5,
+        waterUsage: 3,
+        toxicity: 4,
+        recyclability: 1,
+        lifespan: 5,
+        sustainable: 3.25,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    lime: {
+        name: "Lime",
+        origin: "India",
+        originCoords: [78.9629, 20.5937],
+        distance: 4000,
+        co2: 0.7,
+        waterUsage: 2,
+        toxicity: 2,
+        recyclability: 2,
+        lifespan: 2,
+        sustainable: 2,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    limestone: {
+        name: "Limestone",
+        origin: "India",
+        originCoords: [78.9629, 20.5937],
+        distance: 4000,
+        co2: 0.1,
+        waterUsage: 4,
+        toxicity: 3,
+        recyclability: 1,
+        lifespan: 5,
+        sustainable: 3.25,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    magnesium: {
+        name: "Magnesium",
+        origin: "China",
+        originCoords: [121.4737, 31.2304], // Shanghai
+        distance: 1250,
+        co2: 8,
+        waterUsage: 2,
+        toxicity: 3,
+        recyclability: 4,
+        lifespan: 4,
+        sustainable: 3.25,
+        issues: {
+            Alabor: true,
+            Blabor: true,
+            deforestation: false,
+        }
+    },
+    manganese: {
+        name: "Manganese",
+        origin: "South Africa",
+        originCoords: [22.9375, -30.5595],
+        distance: 11000,
+        co2: 2,
+        waterUsage: 2,
+        toxicity: 2,
+        recyclability: 3,
+        lifespan: 5,
+        sustainable: 3,
+        issues: {
+            Alabor: true,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    propylene: {
+        name: "Propylene",
+        origin: "China",
+        originCoords: [121.4737, 31.2304], // Shanghai
+        distance: 1250,
+        co2: 1.5,
+        waterUsage: 3,
+        toxicity: 2,
+        recyclability: 3,
+        lifespan: 1,
+        sustainable: 2.25,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    quartzite: {
+        name: "Quartzite",
+        origin: "Russia",
+        originCoords: [105.3188, 61.5240],
+        distance: 6400,
+        co2: 0.1,
+        waterUsage: 5,
+        toxicity: 4,
+        recyclability: 1,
+        lifespan: 5,
+        sustainable: 4,
+        issues: {
+            Alabor: true,
+            Blabor: true,
+            deforestation: false,
+        }
+    },
+    silica: {
+        name: "Silica",
+        origin: "Russia",
+        originCoords: [105.3188, 61.5240],
+        distance: 6400,
+        co2: 0.1,
+        waterUsage: 5,
+        toxicity: 4,
+        recyclability: 2,
+        lifespan: 5,
+        sustainable: 4,
+        issues: {
+            Alabor: true,
+            Blabor: true,
+            deforestation: false,
+        }
+    },
+    silicon: {
+        name: "Silicon",
+        origin: "China",
+        originCoords: [121.4737, 31.2304], // Shanghai
+        distance: 1250,
+        co2: 1.8,
+        waterUsage: 2,
+        toxicity: 3,
+        recyclability: 4,
+        lifespan: 5,
+        sustainable: 3.5,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    soda: {
+        name: "Soda Ash",
+        origin: "India",
+        originCoords: [78.9629, 20.5937],
+        distance: 4000,
+        co2: 1.6,
+        waterUsage: 3,
+        toxicity: 3,
+        recyclability: 2,
+        lifespan: 2,
+        sustainable: 2.5,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    sodium: {
+        name: "Sodium",
+        origin: "India",
+        originCoords: [78.9629, 20.5937],
+        distance: 4000,
+        co2: 0.5,
+        waterUsage: 1,
+        toxicity: 1,
+        recyclability: 2,
+        lifespan: 1,
+        sustainable: 1.25,
+        issues: {
+            Alabor: false,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+    zinc: {
+        name: "Zinc",
+        origin: "South Africa",
+        originCoords: [22.9375, -30.5595],
+        distance: 11000,
+        co2: 2,
+        waterUsage: 2,
+        toxicity: 2,
+        recyclability: 4,
+        lifespan: 4,
+        sustainable: 3,
+        issues: {
+            Alabor: true,
+            Blabor: false,
+            deforestation: false,
+        }
+    },
+};
+        // Current selected component
+        let currentComponent = null;
+        let chart = null;
+        let polygonSeries = null;
+        let citySeries = null;
+        let lineSeries = null;
+        let animatedLineSeries = null;
+        let animatedBulletSeries = null;
+
+        // Initialize the map
+        function initMap() {
+            am5.ready(function() {
+                // Create root element
+                var root = am5.Root.new("mapdiv");
+
+                // Set themes
+                root.setThemes([
+                    am5themes_Animated.new(root)
+                ]);
+
+                // Create the map chart
+                chart = root.container.children.push(am5map.MapChart.new(root, {
+                    panX: "translateX",
+                    panY: "translateY",
+                    projection: am5map.geoMercator()
+                }));
+
+                var cont = chart.children.push(am5.Container.new(root, {
+                    layout: root.horizontalLayout,
+                    x: 20,
+                    y: 40
+                }));
+
+                // Add labels and controls
+                cont.children.push(am5.Label.new(root, {
+                    centerY: am5.p50,
+                    text: "Map"
+                }));
+
+                var switchButton = cont.children.push(am5.Button.new(root, {
+                    themeTags: ["switch"],
+                    centerY: am5.p50,
+                    icon: am5.Circle.new(root, {
+                        themeTags: ["icon"]
+                    })
+                }));
+
+                switchButton.on("active", function() {
+                    if (!switchButton.get("active")) {
+                        chart.set("projection", am5map.geoMercator());
+                        chart.set("panX", "translateX");
+                        chart.set("panY", "translateY");
+                    }
+                    else {
+                        chart.set("projection", am5map.geoOrthographic());
+                        chart.set("panX", "rotateX");
+                        chart.set("panY", "rotateY");
+                    }
+                });
+
+                cont.children.push(am5.Label.new(root, {
+                    centerY: am5.p50,
+                    text: "Globe"
+                }));
+
+                // Create main polygon series for countries
+                polygonSeries = chart.series.push(am5map.MapPolygonSeries.new(root, {
+                    geoJSON: am5geodata_worldLow
+                }));
+
+                var graticuleSeries = chart.series.push(am5map.GraticuleSeries.new(root, {}));
+                graticuleSeries.mapLines.template.setAll({
+                    stroke: root.interfaceColors.get("alternativeBackground"),
+                    strokeOpacity: 0.08
+                });
+
+                // Create line series for trajectory lines
+                lineSeries = chart.series.push(am5map.MapLineSeries.new(root, {}));
+                lineSeries.mapLines.template.setAll({
+                    stroke: root.interfaceColors.get("alternativeBackground"),
+                    strokeOpacity: 0
+                });
+
+                animatedLineSeries = chart.series.push(am5map.MapLineSeries.new(root, {}));
+                animatedLineSeries.mapLines.template.setAll({
+                    stroke: root.interfaceColors.get("alternativeBackground"),
+                    strokeOpacity: 0.6
+                });
+
+                // destination series
+                citySeries = chart.series.push(
+                    am5map.MapPointSeries.new(root, {})
+                );
+
+                // visible city circles
+                citySeries.bullets.push(function() {
+                    var circle = am5.Circle.new(root, {
+                        radius: 5,
+                        tooltipText: "{title}",
+                        tooltipY: 0,
+                        fill: am5.color(0xffba00),
+                        stroke: root.interfaceColors.get("background"),
+                        strokeWidth: 2
+                    });
+
+                    return am5.Bullet.new(root, {
+                        sprite: circle
+                    });
+                });
+
+                // invisible series which will animate along invisible lines
+                animatedBulletSeries = chart.series.push(
+                    am5map.MapPointSeries.new(root, {})
+                );
+
+                animatedBulletSeries.bullets.push(function() {
+                    var circle = am5.Circle.new(root, {
+                        radius: 0
+                    });
+
+                    return am5.Bullet.new(root, {
+                        sprite: circle
+                    });
+                });
+
+                // Make stuff animate on load
+                chart.appear(1000, 100);
+            });
+        }
+
+        // Function to update the map with material origins
+        function updateMap(component) {
+            if (!chart || !citySeries || !lineSeries || !animatedLineSeries || !animatedBulletSeries) {
+                return;
+            }
+
+            // Clear previous data
+            citySeries.data.clear();
+            lineSeries.data.clear();
+            animatedLineSeries.data.clear();
+            animatedBulletSeries.data.clear();
+
+            // Get materials for the selected component
+            const materials = componentData[component].materials;
+            
+            // Create destination point (Zhongshan, China - where the lightbulb is assembled)
+            const destination = {
+                id: "zhongshan",
+                title: "Zhongshan, China",
+                geometry: { type: "Point", coordinates: [113.38, 22.52] }
+            };
+            
+            // Add destination to city series
+            citySeries.data.push(destination);
+            
+            // Add each material origin to the map
+            materials.forEach(materialKey => {
+                const material = materialDetails[materialKey];
+                
+                // Create origin point
+                const origin = {
+                    id: materialKey,
+                    title: `${material.name} from ${material.origin}`,
+                    geometry: { type: "Point", coordinates: material.originCoords }
+                };
+                
+                // Add origin to city series
+                citySeries.data.push(origin);
+                
+                // Create line from origin to destination
+                const lineDataItem = lineSeries.pushDataItem({});
+                lineDataItem.set("pointsToConnect", [
+                    citySeries.getDataItemById(materialKey),
+                    citySeries.getDataItemById("zhongshan")
+                ]);
+
+                // Create animation start point
+                const startDataItem = animatedBulletSeries.pushDataItem({});
+                startDataItem.setAll({
+                    lineDataItem: lineDataItem,
+                    positionOnLine: 0
+                });
+
+                // Create animation end point
+                const endDataItem = animatedBulletSeries.pushDataItem({});
+                endDataItem.setAll({
+                    lineDataItem: lineDataItem,
+                    positionOnLine: 1
+                });
+
+                // Create animated line
+                const animatedLineDataItem = animatedLineSeries.pushDataItem({});
+                animatedLineDataItem.set("pointsToConnect", [startDataItem, endDataItem]);
+
+                // Calculate distance for animation duration
+                const lon0 = origin.geometry.coordinates[0];
+                const lat0 = origin.geometry.coordinates[1];
+                const lon1 = destination.geometry.coordinates[0];
+                const lat1 = destination.geometry.coordinates[1];
+                const distance = Math.hypot(lon1 - lon0, lat1 - lat0);
+                const duration = distance * 100;
+
+                // Start animation
+                animateStart(startDataItem, endDataItem, duration);
+            });
+            
+            // Zoom to show all points
+            polygonSeries.events.once("datavalidated", function() {
+                chart.zoomToGeoPoint({
+                    longitude: 20,
+                    latitude: 30
+                }, 2);
+            });
+        }
+
+        function animateStart(startDataItem, endDataItem, duration) {
+            var startAnimation = startDataItem.animate({
+                key: "positionOnLine",
+                from: 0,
+                to: 1,
+                duration: duration
+            });
+
+            startAnimation.events.on("stopped", function() {
+                animateEnd(startDataItem, endDataItem, duration);
+            });
+        }
+
+        function animateEnd(startDataItem, endDataItem, duration) {
+            startDataItem.set("positionOnLine", 0);
+            var endAnimation = endDataItem.animate({
+                key: "positionOnLine",
+                from: 0,
+                to: 1,
+                duration: duration
+            });
+
+            endAnimation.events.on("stopped", function() {
+                animateStart(startDataItem, endDataItem, duration);
+            });
+        }
+
+        // Function to select a component
+        function selectComponent(component) {
+            // Hide default view and show details
+            document.getElementById('default-view').classList.add('hidden');
+            document.getElementById('component-details').classList.remove('hidden');
+            
+            // Store current component
+            currentComponent = component;
+
+            // Show the description section
+            document.getElementById("component-description").classList.remove("hidden");
+
+            // Insert the right description
+            document.getElementById("description-text").textContent = descriptions[component];
+            
+            // Update the materials list
+            updateMaterialsList(component);
+            
+            // Update the map
+            updateMap(component);
+            
+            // Update summary
+            updateSummary(component);
+            
+            // Update active button styling
+            document.querySelectorAll('[onclick^="selectComponent"]').forEach(btn => {
+                btn.classList.remove('bg-blue-600');
+                btn.classList.add('bg-blue-700');
+            });
+            event.target.classList.remove('bg-blue-700');
+            event.target.classList.add('bg-blue-600');
+        }
+
+        // Function to update materials list
+        function updateMaterialsList(component) {
+            const materialsContainer = document.getElementById('materials-container');
+            materialsContainer.innerHTML = '';
+            
+            componentData[component].materials.forEach(materialKey => {
+                const material = materialDetails[materialKey];
+                
+                // Create rating dots
+                const createRatingDots = (rating) => {
+                    let dots = '';
+                    for (let i = 0; i < 5; i++) {
+                        const color = i < rating ? 
+                                      (rating >= 4 ? 'bg-green-500' : rating >= 2 ? 'bg-yellow-500' : 'bg-red-500') : 
+                                      'bg-gray-300';
+                        dots += `<span class="rating-dot ${color}"></span>`;
+                    }
+                    return dots;
+                };
+                
+                const createIssueIndicators = (issues) => {
+    let indicators = '';
+
+    const createTooltip = (label) => `
+        <span class="relative group">
+            <span class="issue-indicator bg-red-500"></span>
+            <span class="absolute bottom-full mb-1 left-1/2 transform -translate-x-1/2 px-2 py-1 text-xs text-white bg-black rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 whitespace-nowrap">
+                ${label}
+            </span>
+        </span>
+    `;
+
+    if (issues.Alabor) indicators += createTooltip("Child Labor");
+    if (issues.Blabor) indicators += createTooltip("Forced Labor");
+    if (issues.deforestation) indicators += createTooltip("Deforestation");
+    if (issues.waterImpact) indicators += createTooltip("Water Impact");
+
+    return indicators;
+};
+
+                
+                const materialCard = document.createElement('div');
+                materialCard.className = 'material-card bg-gray-50 p-4 rounded-lg mb-4';
+                materialCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <h4 class="font-medium text-blue-800 text-lg">${material.name}</h4>
+                        <div class="flex">
+                            ${createIssueIndicators(material.issues)}
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-4">Origin: ${material.origin} (${material.distance.toLocaleString()} km travelled)</div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div class="flex flex-col">
+                            <div class="flex items-center mb-2">
+                                <span class="text-gray-600 w-24">Water Usage</span>
+                                <span class="rating-dots ml-2">${createRatingDots(material.waterUsage)}</span>
+                            </div>
+                            <div class="flex items-center mb-2">
+                                <span class="text-gray-600 w-24">Toxicity</span>
+                                <span class="rating-dots ml-2">${createRatingDots(material.toxicity)}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col">
+                            <div class="flex items-center mb-2">
+                                <span class="text-gray-600 w-24">Recyclability</span>
+                                <span class="rating-dots ml-2">${createRatingDots(material.recyclability)}</span>
+                            </div>
+                            <div class="flex items-center mb-2">
+                                <span class="text-gray-600 w-24">Lifespan</span>
+                                <span class="rating-dots ml-2">${createRatingDots(material.lifespan)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-blue-50 p-3 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Sustainability:</span>
+                                <span class="font-medium text-blue-800">${material.sustainable.toFixed(1)}/5</span>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">CO₂ Emissions:</span>
+                                <span class="font-medium text-blue-800">${material.co2} kg</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                materialsContainer.appendChild(materialCard);
+            });
+        }
+
+        // Function to update summary
+        function updateSummary(component) {
+            const materials = componentData[component].materials;
+            
+            // Calculate averages
+            let totalWaterUsage = 0, totalToxicity = 0, totalRecyclability = 0, totalLifespan = 0, totalSustainable = 0;
+            let totalDistance = 0, totalCo2 = 0;
+            
+            materials.forEach(materialKey => {
+                const material = materialDetails[materialKey];
+                totalWaterUsage += material.waterUsage;
+                totalToxicity += material.toxicity;
+                totalRecyclability += material.recyclability;
+                totalLifespan += material.lifespan;
+                totalSustainable += material.sustainable;
+                totalDistance += material.distance;
+                totalCo2 += material.co2;
+            });
+            
+            const count = materials.length;
+            
+            // Update average ratings
+            const averageRatings = document.getElementById('average-ratings');
+            averageRatings.innerHTML = `
+                <div class="mb-1">
+                    <span class="text-sm text-blue-600">Water Usage:</span>
+                    <span class="float-right font-medium">${(totalWaterUsage/count).toFixed(1)}/5</span>
+                </div>
+                <div class="mb-1">
+                    <span class="text-sm text-blue-600">Toxicity:</span>
+                    <span class="float-right font-medium">${(totalToxicity/count).toFixed(1)}/5</span>
+                </div>
+                <div class="mb-1">
+                    <span class="text-sm text-blue-600">Recyclability:</span>
+                    <span class="float-right font-medium">${(totalRecyclability/count).toFixed(1)}/5</span>
+                </div>
+                <div class="mb-1">
+                    <span class="text-sm text-blue-600">Lifespan:</span>
+                    <span class="float-right font-medium">${(totalLifespan/count).toFixed(1)}/5</span>
+                </div>
+                <div>
+                    <span class="text-sm text-blue-600">Sustainable:</span>
+                    <span class="float-right font-medium">${(totalSustainable/count).toFixed(1)}/5</span>
+                </div>
+            `;
+            
+            // Update average distance
+            document.getElementById('average-distance').textContent = `${Math.round(totalDistance/count).toLocaleString()} km`;
+            
+            // Update average CO2
+            document.getElementById('average-co2').textContent = `${(totalCo2/count).toFixed(1)} kg`;
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+        });
+    </script>
+</body>
+</html>
