@@ -1,3 +1,3 @@
-The explanation machine 
-the unseen story behind everyday products by Maxwell coates
-uncovering the ethical and environmental past of a lightbulb to provide a resource for consumers
+The explanation machine.
+The unseen story behind everyday products by Maxwell Coates.
+Uncovering the ethical and environmental past of a lightbulb to provide a resource for consumers.
